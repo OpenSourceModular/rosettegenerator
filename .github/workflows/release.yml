@@ -1,0 +1,34 @@
+name: release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-attach-zip:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create plugin zip
+        run: |
+          git archive --format=zip --output OctoPrint-RosetteGenerator.zip HEAD
+
+      - name: Upload asset to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: OctoPrint-RosetteGenerator.zip
+
+      - name: Upload artifact for manual runs
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: OctoPrint-RosetteGenerator
+          path: OctoPrint-RosetteGenerator.zip

@@ -1,0 +1,87 @@
+.rosettegenerator-tab-content {
+  max-width: 1000px;
+}
+
+.rosettegenerator-grid {
+  display: grid;
+  grid-template-columns: 180px minmax(110px, 0.5fr) 120px;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.rosettegenerator-grid input,
+.rosettegenerator-grid select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.rosettegenerator-spacer {
+  min-height: 1px;
+}
+
+.rosettegenerator-span-2 {
+  grid-column: 2 / 4;
+}
+
+.rosettegenerator-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.rosettegenerator-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.rosettegenerator-export-row {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 180px minmax(220px, 1fr) auto;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.rosettegenerator-export-row input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.rosettegenerator-filename-row {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 180px minmax(220px, 1fr) auto;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.rosettegenerator-filename-row input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.rosettegenerator-status {
+  color: #444;
+}
+
+.rosettegenerator-hold {
+  margin-top: 8px;
+  color: #2f4f4f;
+}
+
+.rosettegenerator-preview {
+  margin-top: 14px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  min-height: 360px;
+  background: #fafafa;
+}
+
+.rosettegenerator-preview svg {
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,82 @@
+<div id="tab_plugin_rosettegenerator" class="rosettegenerator-tab-content">
+  <h3>Rosette Generator</h3>
+
+  <div class="rosettegenerator-grid">
+    <label>Style</label>
+    <select data-bind="value: style">
+      <option value="Bump">Bump</option>
+      <option value="Dip">Dip</option>
+      <option value="Arch">Arch</option>
+      <option value="Concave+Convex">Concave+Convex</option>
+      <option value="Puffy">Puffy</option>
+      <option value="W">W</option>
+      <option value="X + 1">X + 1</option>
+      <option value="Flat">Flat</option>
+      <option value="Lotus">Lotus</option>
+      <option value="A">A</option>
+      <option value="Sine">Sine</option>
+      <option value="Bead">Bead</option>
+    </select>
+    <span class="rosettegenerator-spacer" aria-hidden="true"></span>
+
+    <label>Outer Radius</label>
+    <input type="range" min="1" max="175" step="0.5" data-bind="value: radius, valueUpdate: 'input'" />
+    <input type="number" step="0.5" min="1" data-bind="value: radius, valueUpdate: 'input'" />
+
+    <label>Amplitude</label>
+    <input type="range" min="0" max="50" step="0.5" data-bind="value: height, valueUpdate: 'input'" />
+    <input type="number" step="0.5" min="0" data-bind="value: height, valueUpdate: 'input'" />
+
+    <label>Segments</label>
+    <input type="range" min="1" max="96" step="1" data-bind="value: count, valueUpdate: 'input'" />
+    <input type="number" step="1" min="1" data-bind="value: count, valueUpdate: 'input'" />
+
+    <label>Phase (deg)</label>
+    <input type="range" min="0" max="180" step="0.5" data-bind="value: phase, valueUpdate: 'input'" />
+    <input type="number" step="0.5" min="0" max="180" data-bind="value: phase, valueUpdate: 'input'" />
+
+    <label data-bind="visible: showSplit">Split %</label>
+    <span data-bind="visible: showSplit"></span>
+    <input type="number" step="0.5" min="0.1" max="99.9" data-bind="value: splitPercent, visible: showSplit" />
+
+    <label data-bind="visible: showX">X Count</label>
+    <span data-bind="visible: showX"></span>
+    <input type="number" step="1" min="1" data-bind="value: xCount, visible: showX" />
+
+    <label data-bind="visible: showFlatLength">Flat Length</label>
+    <span data-bind="visible: showFlatLength"></span>
+    <input type="number" step="0.5" min="0" data-bind="value: flatLength, visible: showFlatLength" />
+  </div>
+
+  <div class="rosettegenerator-export-row">
+    <label for="rosettegenerator-export-dir">Export Folder</label>
+    <input id="rosettegenerator-export-dir" type="text" data-bind="value: exportDir" />
+    <button class="btn" data-bind="click: browseExportDir">Browse...</button>
+  </div>
+
+  <div class="rosettegenerator-filename-row">
+    <label for="rosettegenerator-filename">Filename</label>
+    <input id="rosettegenerator-filename" type="text" data-bind="value: fileName, valueUpdate: 'input'" />
+    <span class="rosettegenerator-spacer" aria-hidden="true"></span>
+  </div>
+
+  <div class="rosettegenerator-actions">
+    <button class="btn btn-primary" data-bind="click: preview">Preview</button>
+    <button class="btn" data-bind="click: exportSvg">Export SVG</button>
+    <button class="btn" data-bind="click: holdCurrent">Hold</button>
+    <button class="btn" data-bind="click: resetHold">Reset</button>
+    <button class="btn" data-bind="click: mergeHeld, enable: canMerge">Merge</button>
+    <button class="btn" data-bind="click: saveDefaults">Save Defaults</button>
+    <label class="rosettegenerator-checkbox">
+      <input type="checkbox" data-bind="checked: autoPreview" />
+      Auto preview
+    </label>
+    <span class="rosettegenerator-status" data-bind="text: status"></span>
+  </div>
+
+  <div class="rosettegenerator-hold" data-bind="visible: hasHeld">
+    Held: <strong data-bind="text: heldSummary"></strong>
+  </div>
+
+  <div class="rosettegenerator-preview" data-bind="html: svgMarkup"></div>
+</div>
