@@ -23,8 +23,6 @@ Generate decorative rosette curve patterns directly in OctoPrint, preview them i
      - `https://github.com/OpenSourceModular/OctoPrint-RosetteGenerator/archive/refs/heads/main.zip`
 3. Install and restart OctoPrint.
 
-For best results, publish a GitHub Release first and use the release zip URL so users always install a known version.
-
 ### Option 2: pip install from GitHub
 
 Run this in the same Python environment as OctoPrint:
@@ -38,43 +36,6 @@ Install optional merge support:
 ```bash
 pip install "OctoPrint-RosetteGenerator[merge]"
 ```
-
-## Development install
-
-From this repository root:
-
-```bash
-pip install -e .
-```
-
-Optional merge dependencies:
-
-```bash
-pip install -e ".[merge]"
-```
-
-## Repository setup before publishing
-
-Update these placeholders before publishing your repo:
-
-- `setup.py` URL: `https://github.com/your-user/OctoPrint-RosetteGenerator`
-- Install URLs in this README (`your-user`)
-- `LICENSE` copyright owner name
-
-## Publish a release zip automatically
-
-This repository includes GitHub Actions workflows:
-
-- `.github/workflows/ci.yml`: builds the package on pushes and pull requests
-- `.github/workflows/release.yml`: creates `OctoPrint-RosetteGenerator.zip` and attaches it to GitHub Releases
-
-To publish a release users can install from:
-
-1. Push your repository to GitHub.
-2. Create a tag and release (example `v0.1.0`).
-3. GitHub Actions attaches `OctoPrint-RosetteGenerator.zip` to the release.
-4. Share this URL in OctoPrint Plugin Manager:
-  - `https://github.com/your-user/OctoPrint-RosetteGenerator/releases/latest/download/OctoPrint-RosetteGenerator.zip`
 
 ## Notes
 
