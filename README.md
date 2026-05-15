@@ -16,20 +16,9 @@ Generate decorative rosette curve patterns directly in OctoPrint, preview them i
 ### Option 1: OctoPrint Plugin Manager (recommended)
 
 1. In OctoPrint, open **Settings > Plugin Manager > Get More...**
-2. Use **...from URL** and paste one of the following:
-   - Latest release zip URL (recommended):
-     - `https://github.com/OpenSourceModular/OctoPrint-RosetteGenerator/releases/latest/download/OctoPrint-RosetteGenerator.zip`
-   - Or main branch zip URL:
-     - `https://github.com/OpenSourceModular/OctoPrint-RosetteGenerator/archive/refs/heads/main.zip`
+2. Use **...from URL** and paste this in:
+     https://github.com/OpenSourceModular/rosettegenerator/releases/download/v0.1.0/OctoPrint-RosetteGenerator.zip
 3. Install and restart OctoPrint.
-
-### Option 2: pip install from GitHub
-
-Run this in the same Python environment as OctoPrint:
-
-```bash
-pip install git+https://github.com/your-user/OctoPrint-RosetteGenerator.git
-```
 
 Install optional merge support:
 
