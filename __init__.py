@@ -839,8 +839,10 @@ class RosetteGeneratorPlugin(
     def on_after_startup(self):
         self._logger.info("RosetteGenerator plugin loaded")
 
+    def _get_default_export_dir(self):
+        return os.path.join(self._settings.getBaseFolder("uploads"), "rosette")
+
     def get_settings_defaults(self):
-        default_export_dir = os.path.join(self.get_plugin_data_folder(), "exports")
         return {
             "outer_radius": 50.0,
             "amplitude": 5.0,
@@ -851,7 +853,7 @@ class RosetteGeneratorPlugin(
             "flat_length": 8.0,
             "default_style": "Bump",
             "auto_preview": True,
-            "export_dir": default_export_dir,
+            "export_dir": self._get_default_export_dir(),
         }
 
     def get_template_configs(self):
@@ -957,7 +959,7 @@ class RosetteGeneratorPlugin(
 
     def _build_polygon_from_payload(self, payload):
         if Polygon is None:
-            raise RuntimeError("Merge requires the shapely package.")
+            raise RuntimeError("The required `shapely` dependency failed to load. Check the OctoPrint logs and reinstall the plugin if needed.")
 
         params = self._parse_rosette_payload(payload)
         segments, _ = get_rosette_geometry(
@@ -1113,9 +1115,8 @@ class RosetteGeneratorPlugin(
                         "x_count": self._settings.get_int(["x_count"]),
                         "flat_length": self._settings.get_float(["flat_length"]),
                         "auto_preview": _as_bool(self._settings.get(["auto_preview"])),
-                        "export_dir": str(self._settings.get(["export_dir"]) or ""),
-                    },
-                    "merge_available": unary_union is not None and Polygon is not None,
+                        "export_dir": str(self._settings.get(["export_dir"]) or self._get_default_export_dir()),
+                        },
                 }
             )
 
@@ -1136,7 +1137,8 @@ class RosetteGeneratorPlugin(
             self._settings.set_int(["x_count"], int(settings.get("x_count", self._settings.get_int(["x_count"]))))
             self._settings.set_float(["flat_length"], float(settings.get("flat_length", self._settings.get_float(["flat_length"]))))
             self._settings.set(["auto_preview"], _as_bool(settings.get("auto_preview", self._settings.get(["auto_preview"]))))
-            self._settings.set(["export_dir"], str(settings.get("export_dir", self._settings.get(["export_dir"]) or "")).strip())
+            export_dir = str(settings.get("export_dir", self._settings.get(["export_dir"]) or self._get_default_export_dir())).strip()
+            self._settings.set(["export_dir"], export_dir or self._get_default_export_dir())
             self._settings.save()
 
             return jsonify({"ok": True, "message": "Defaults saved"})
@@ -1203,7 +1205,7 @@ class RosetteGeneratorPlugin(
                     raise ValueError("Merged export requires held and current rosettes.")
 
                 if unary_union is None or Polygon is None:
-                    raise ValueError("Merge export requires shapely. Install shapely in OctoPrint's Python environment.")
+                    raise ValueError("The required `shapely` dependency failed to load. Check the OctoPrint logs and reinstall the plugin if needed.")
 
                 held_geometry = self._build_polygon_from_payload(held_payload)
                 current_geometry = self._build_polygon_from_payload(current_payload)
@@ -1219,9 +1221,7 @@ class RosetteGeneratorPlugin(
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 400
 
-        export_dir = str(payload.get("export_dir") or self._settings.get(["export_dir"]) or "").strip()
-        if not export_dir:
-            return jsonify({"ok": False, "error": "Export folder is not set."}), 400
+        export_dir = str(payload.get("export_dir") or self._settings.get(["export_dir"]) or self._get_default_export_dir()).strip()
 
         export_dir = os.path.abspath(export_dir)
         try:
@@ -1241,7 +1241,7 @@ class RosetteGeneratorPlugin(
     @octoprint.plugin.BlueprintPlugin.route("/merge", methods=["POST"])
     def merge(self):
         if unary_union is None or Polygon is None:
-            return jsonify({"ok": False, "error": "Merge requires shapely. Install shapely in OctoPrint's Python environment."}), 400
+            return jsonify({"ok": False, "error": "The required `shapely` dependency failed to load. Check the OctoPrint logs and reinstall the plugin if needed."}), 400
 
         payload = request.get_json(silent=True) or {}
         held_payload = payload.get("held")
