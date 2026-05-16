@@ -9,7 +9,7 @@ Generate decorative rosette curve patterns directly in OctoPrint, preview them i
 - Save defaults in plugin settings
 - Hold + merge workflow
 - SVG export
-- Shapely-powered geometry merge support
+- Optional Shapely-powered geometry merge support
 
 ## Installation
 
@@ -18,9 +18,15 @@ Generate decorative rosette curve patterns directly in OctoPrint, preview them i
 1. In OctoPrint, open **Settings > Plugin Manager > Get More...**
 2. Use **...from URL** and paste this in:
      https://github.com/OpenSourceModular/rosettegenerator/releases/download/v0.1.0/OctoPrint-RosetteGenerator.zip
-3. Install and restart OctoPrint. `shapely` is installed automatically with the plugin.
+3. Install and restart OctoPrint.
+
+Install optional merge support:
+
+```bash
+pip install "OctoPrint-RosetteGenerator[merge]"
+```
 
 ## Notes
 
-- Default export location is OctoPrint's uploads folder under `rosette` (`.../uploads/rosette`).
-- Merge features depend on `shapely`, which is now included as a required plugin dependency.
+- Default export location is stored in OctoPrint's plugin data folder (`.../data/rosettegenerator/exports`) so it stays writable for installed plugins.
+- If Shapely is not installed, normal generation and export still work; only merge functionality is unavailable.

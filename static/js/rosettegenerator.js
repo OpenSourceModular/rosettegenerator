@@ -20,6 +20,7 @@ $(function () {
         self.status = ko.observable("Ready");
         self.svgMarkup = ko.observable("");
         self.heldPayload = ko.observable(null);
+        self.mergeAvailable = ko.observable(false);
         self.mergedPayload = ko.observable(null);
 
         self.showSplit = ko.pureComputed(function () {
@@ -47,7 +48,7 @@ $(function () {
         });
 
         self.canMerge = ko.pureComputed(function () {
-            return self.hasHeld();
+            return self.hasHeld() && self.mergeAvailable();
         });
 
         self.defaultFileName = ko.pureComputed(function () {
@@ -151,6 +152,10 @@ $(function () {
         };
 
         self.mergeHeld = function () {
+            if (!self.mergeAvailable()) {
+                self.status("Merge unavailable: shapely is not installed");
+                return;
+            }
             if (!self.heldPayload()) {
                 self.status("Hold a rosette first");
                 return;
@@ -248,6 +253,7 @@ $(function () {
                     self.flatLength(settings.flat_length);
                     self.autoPreview(!!settings.auto_preview);
                     self.exportDir(settings.export_dir || "");
+                    self.mergeAvailable(!!response.merge_available);
 
                     self.isInitializing = false;
 
