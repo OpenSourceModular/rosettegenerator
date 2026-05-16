@@ -1,3 +1,6 @@
 [build-system]
 requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
+dependecies = [
+    "shapely >= 2.1.2"
+    ]
