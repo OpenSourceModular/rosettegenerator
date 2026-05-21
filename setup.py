@@ -9,7 +9,7 @@ README = ROOT / "README.md"
 
 setup(
     name="OctoPrint-RosetteGenerator",
-    version="0.1.0",
+    version="0.1.2",
     description="Generate decorative rosette curves and export SVG files from OctoPrint.",
     long_description=README.read_text(encoding="utf-8") if README.exists() else "",
     long_description_content_type="text/markdown",
