@@ -3,21 +3,47 @@
 
   <div class="rosettegenerator-grid">
     <label>Style</label>
-    <select data-bind="value: style">
-      <option value="Bump">Bump</option>
-      <option value="Dip">Dip</option>
-      <option value="Arch">Arch</option>
-      <option value="Concave+Convex">Concave+Convex</option>
-      <option value="Puffy">Puffy</option>
-      <option value="W">W</option>
-      <option value="X + 1">X + 1</option>
-      <option value="Flat">Flat</option>
-      <option value="Lotus">Lotus</option>
-      <option value="A">A</option>
-      <option value="Sine">Sine</option>
-      <option value="Bead">Bead</option>
-    </select>
-    <span class="rosettegenerator-spacer" aria-hidden="true"></span>
+    <div class="rosettegenerator-style-selects rosettegenerator-span-2">
+      <div class="rosettegenerator-style-selects-row">
+        <select data-bind="value: style">
+          <option value="Bump">Bump</option>
+          <option value="Dip">Dip</option>
+          <option value="Arch">Arch</option>
+          <option value="Concave+Convex">Concave+Convex</option>
+          <option value="Puffy">Puffy</option>
+          <option value="W">W</option>
+          <option value="X + 1">X + 1</option>
+          <option value="Flat">Flat</option>
+          <option value="Lotus">Lotus</option>
+          <option value="A">A</option>
+          <option value="Sine">Sine</option>
+          <option value="Bead">Bead</option>
+        </select>
+        <label class="rosettegenerator-inline-label" for="rosettegenerator-holtz-style">Holtz</label>
+        <select id="rosettegenerator-holtz-style" data-bind="value: holtzStyle">
+          <option value="">None</option>
+          <option value="Holtz - A">Holtz - A</option>
+          <option value="Holtz - B">Holtz - B</option>
+          <option value="Holtz - C">Holtz - C</option>
+          <option value="Holtz - D">Holtz - D</option>
+          <option value="Holtz - E">Holtz - E</option>
+          <option value="Holtz - F">Holtz - F</option>
+          <option value="Holtz - G">Holtz - G</option>
+          <option value="Holtz - H">Holtz - H</option>
+          <option value="Holtz - I">Holtz - I</option>
+          <option value="Holtz - J">Holtz - J</option>
+          <option value="Holtz - K">Holtz - K</option>
+          <option value="Holtz - L">Holtz - L</option>
+          <option value="Holtz - M">Holtz - M</option>
+          <option value="Holtz - N">Holtz - N</option>
+          <option value="Holtz - O">Holtz - O</option>
+          <option value="Holtz - P">Holtz - P</option>
+          <option value="Holtz - Q">Holtz - Q</option>
+          <option value="Holtz - R">Holtz - R</option>
+          <option value="Holtz - S">Holtz - S</option>
+        </select>
+      </div>
+    </div>
 
     <label>Outer Radius</label>
     <input type="range" min="1" max="175" step="0.5" data-bind="value: radius, valueUpdate: 'input'" />
@@ -34,6 +60,14 @@
     <label>Phase (deg)</label>
     <input type="range" min="0" max="180" step="0.5" data-bind="value: phase, valueUpdate: 'input'" />
     <input type="number" step="0.5" min="0" max="180" data-bind="value: phase, valueUpdate: 'input'" />
+
+    <label data-bind="visible: showHoltzN2">Holtz n2</label>
+    <input type="range" min="3" max="24" step="1" data-bind="value: holtzN2, valueUpdate: 'input', visible: showHoltzN2" />
+    <input type="number" step="1" min="3" max="24" data-bind="value: holtzN2, valueUpdate: 'input', visible: showHoltzN2" />
+
+    <label data-bind="visible: showHoltzA2">Holtz a2</label>
+    <input type="range" min="0" max="1" step="0.01" data-bind="value: holtzA2, valueUpdate: 'input', visible: showHoltzA2" />
+    <input type="number" step="0.01" min="0" max="1" data-bind="value: holtzA2, valueUpdate: 'input', visible: showHoltzA2" />
 
     <label data-bind="visible: showSplit">Split %</label>
     <span data-bind="visible: showSplit"></span>
@@ -70,6 +104,10 @@
     <label class="rosettegenerator-checkbox">
       <input type="checkbox" data-bind="checked: autoPreview" />
       Auto preview
+    </label>
+    <label class="rosettegenerator-checkbox">
+      <input type="checkbox" data-bind="checked: showGuides" />
+      Polar guides
     </label>
     <span class="rosettegenerator-status" data-bind="text: status"></span>
   </div>

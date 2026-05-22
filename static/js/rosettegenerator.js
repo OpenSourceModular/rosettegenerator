@@ -6,10 +6,14 @@ $(function () {
         self.isInitializing = true;
 
         self.style = ko.observable("Bump");
+        self.holtzStyle = ko.observable("");
+        self.holtzN2 = ko.observable(5);
+        self.holtzA2 = ko.observable(0.2);
         self.radius = ko.observable(50.0);
         self.height = ko.observable(5.0);
         self.count = ko.observable(12);
         self.phase = ko.observable(0.0);
+        self.showGuides = ko.observable(true);
         self.splitPercent = ko.observable(50.0);
         self.xCount = ko.observable(3);
         self.flatLength = ko.observable(8.0);
@@ -35,6 +39,25 @@ $(function () {
             return self.style() === "Bead";
         });
 
+        self.holtzLetter = ko.pureComputed(function () {
+            var value = (self.holtzStyle() || "").toString().trim();
+            if (!value) {
+                return "";
+            }
+            var match = value.match(/^Holtz\s*-\s*([A-S])$/);
+            return match ? match[1] : "";
+        });
+
+        self.showHoltzN2 = ko.pureComputed(function () {
+            var letter = self.holtzLetter();
+            return ["E", "H", "I", "J", "Q", "S"].indexOf(letter) !== -1;
+        });
+
+        self.showHoltzA2 = ko.pureComputed(function () {
+            var letter = self.holtzLetter();
+            return ["H", "I", "J", "Q", "S"].indexOf(letter) !== -1;
+        });
+
         self.hasHeld = ko.pureComputed(function () {
             return !!self.heldPayload();
         });
@@ -51,8 +74,16 @@ $(function () {
             return self.hasHeld() && self.mergeAvailable();
         });
 
+        self.activeStyleLabel = ko.pureComputed(function () {
+            var holtzStyle = (self.holtzStyle() || "").toString().trim();
+            if (holtzStyle) {
+                return holtzStyle;
+            }
+            return (self.style() || "Rosette").toString().trim() || "Rosette";
+        });
+
         self.defaultFileName = ko.pureComputed(function () {
-            var style = (self.style() || "Rosette").toString().trim();
+            var style = self.activeStyleLabel();
             if (!style) {
                 style = "Rosette";
             }
@@ -91,6 +122,10 @@ $(function () {
         self.buildPayload = function () {
             return {
                 kind: self.style(),
+                holtz_style: self.holtzStyle(),
+                holtz_n2: parseInt(self.holtzN2(), 10),
+                holtz_a2: parseFloat(self.holtzA2()),
+                show_guides: !!self.showGuides(),
                 radius: parseFloat(self.radius()),
                 height: parseFloat(self.height()),
                 count: parseInt(self.count(), 10),
@@ -201,6 +236,10 @@ $(function () {
                 data: JSON.stringify({
                     settings: {
                         default_style: self.style(),
+                        default_holtz_style: self.holtzStyle(),
+                        default_holtz_n2: parseInt(self.holtzN2(), 10),
+                        default_holtz_a2: parseFloat(self.holtzA2()),
+                        show_guides: !!self.showGuides(),
                         outer_radius: parseFloat(self.radius()),
                         amplitude: parseFloat(self.height()),
                         num_segments: parseInt(self.count(), 10),
@@ -244,6 +283,14 @@ $(function () {
 
                     var settings = response.settings;
                     self.style(settings.default_style || "Bump");
+                    self.holtzStyle(settings.default_holtz_style || "");
+                    self.holtzN2(settings.default_holtz_n2 || 5);
+                    self.holtzA2(settings.default_holtz_a2 == null ? 0.2 : settings.default_holtz_a2);
+                    if (settings.show_guides == null) {
+                        self.showGuides((settings.guide_opacity == null ? 0.7 : settings.guide_opacity) > 0);
+                    } else {
+                        self.showGuides(!!settings.show_guides);
+                    }
                     self.radius(settings.outer_radius);
                     self.height(settings.amplitude);
                     self.count(settings.num_segments);
@@ -288,6 +335,10 @@ $(function () {
             } else {
                 payload = {
                     kind: self.style(),
+                    holtz_style: self.holtzStyle(),
+                    holtz_n2: parseInt(self.holtzN2(), 10),
+                    holtz_a2: parseFloat(self.holtzA2()),
+                    show_guides: !!self.showGuides(),
                     radius: parseFloat(self.radius()),
                     height: parseFloat(self.height()),
                     count: parseInt(self.count(), 10),
@@ -339,7 +390,17 @@ $(function () {
             }
         };
 
-        self.style.subscribe(self.scheduleAutoPreview);
+        self.style.subscribe(function () {
+            if (self.holtzStyle()) {
+                self.holtzStyle("");
+                return;
+            }
+            self.scheduleAutoPreview();
+        });
+        self.holtzStyle.subscribe(self.scheduleAutoPreview);
+        self.holtzN2.subscribe(self.scheduleAutoPreview);
+        self.holtzA2.subscribe(self.scheduleAutoPreview);
+        self.showGuides.subscribe(self.scheduleAutoPreview);
         self.radius.subscribe(self.scheduleAutoPreview);
         self.height.subscribe(self.scheduleAutoPreview);
         self.count.subscribe(self.scheduleAutoPreview);

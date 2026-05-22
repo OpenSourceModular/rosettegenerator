@@ -5,6 +5,8 @@ from flask import jsonify, request
 
 import octoprint.plugin
 
+from .holtz_patterns import HOLTZ_FUNCTIONS
+
 try:
     from shapely.geometry import GeometryCollection, MultiPolygon, Polygon
     from shapely.ops import unary_union
@@ -29,6 +31,10 @@ ROSETTE_TYPES = [
     "Sine",
     "Bead",
 ]
+
+HOLTZ_TYPES = ["Holtz - {0}".format(letter) for letter in "ABCDEFGHIJKLMNOPQRS"]
+HOLTZ_DEFAULT_N2 = 5
+HOLTZ_DEFAULT_A2 = 0.2
 
 TAU = 2.0 * math.pi
 
@@ -629,6 +635,53 @@ def get_rosette_geometry(kind, radius, count, height, extra=None, phase=0.0):
     return segments, reference_radius
 
 
+def _evaluate_holtz_value(holtz_style, n, repeat, n2, a2):
+    style_key = holtz_style.replace("Holtz - ", "Holtz")
+    holtz_fn = HOLTZ_FUNCTIONS[style_key]
+
+    if style_key in ("HoltzA", "HoltzB", "HoltzF", "HoltzG", "HoltzK", "HoltzP"):
+        return holtz_fn(n)
+    if style_key in ("HoltzC", "HoltzD", "HoltzL", "HoltzM", "HoltzN", "HoltzO", "HoltzR"):
+        return holtz_fn(n, repeat)
+    return holtz_fn(n, repeat, n2, a2)
+
+
+def get_holtz_geometry(holtz_style, radius, count, height, phase=0.0, n2=HOLTZ_DEFAULT_N2, a2=HOLTZ_DEFAULT_A2):
+    if holtz_style not in HOLTZ_TYPES:
+        raise ValueError("Unknown Holtz style")
+    if radius <= 0:
+        raise ValueError("Radius must be greater than 0")
+    if count < 1:
+        raise ValueError("Count must be at least 1")
+    if height < 0:
+        raise ValueError("Height must be 0 or greater")
+    if phase < 0.0 or phase > 180.0:
+        raise ValueError("Phase must be between 0 and 180 degrees")
+
+    n2 = max(3, int(n2))
+    a2 = float(a2)
+
+    sample_count = max(720, int(count) * 120)
+    points = []
+    min_radius = radius
+
+    for idx in range(sample_count):
+        normalized_angle = idx / float(sample_count)
+        value = _evaluate_holtz_value(holtz_style, normalized_angle * count, count, n2, a2)
+        current_radius = radius - (height * value)
+        min_radius = min(min_radius, current_radius)
+        angle = normalized_angle * TAU
+        points.append((current_radius * math.cos(angle), current_radius * math.sin(angle)))
+
+    segments = []
+    for idx, point in enumerate(points):
+        next_point = points[(idx + 1) % len(points)]
+        segments.append(("line", point, next_point))
+
+    segments = _rotate_segments(segments, -math.radians(phase))
+    return segments, min_radius
+
+
 def build_curve_path_data(segments):
     path_parts = []
     is_first_segment = True
@@ -668,9 +721,10 @@ def build_curve_path_data(segments):
     return " ".join(path_parts), (min(all_x), min(all_y), max(all_x), max(all_y))
 
 
-def _append_polar_guides(svg_lines, bounds, angle_offset_deg=0.0):
+def _append_polar_guides(svg_lines, bounds, angle_offset_deg=0.0, guide_opacity=0.7):
     min_x, min_y, max_x, max_y = bounds
-    svg_lines.append("  <g id=\"guides\" opacity=\"0.3\">")
+    guide_opacity = max(0.0, min(1.0, float(guide_opacity)))
+    svg_lines.append("  <g id=\"guides\" opacity=\"{0:.3f}\">".format(guide_opacity))
     max_extent = max(abs(min_x), abs(max_x), abs(min_y), abs(max_y)) * 1.5
     for angle_deg in range(0, 360, 45):
         angle_rad = math.radians(angle_deg + angle_offset_deg)
@@ -679,7 +733,7 @@ def _append_polar_guides(svg_lines, bounds, angle_offset_deg=0.0):
         x2 = -x1
         y2 = -y1
         svg_lines.append(
-            "    <line x1=\"{0:.2f}\" y1=\"{1:.2f}\" x2=\"{2:.2f}\" y2=\"{3:.2f}\" stroke=\"#cccccc\" stroke-width=\"0.1\" stroke-dasharray=\"0.5,0.5\" />".format(
+            "    <line x1=\"{0:.2f}\" y1=\"{1:.2f}\" x2=\"{2:.2f}\" y2=\"{3:.2f}\" stroke=\"#aaaaaa\" stroke-width=\"0.1\" stroke-dasharray=\"0.5,0.5\" />".format(
                 x1, y1, x2, y2
             )
         )
@@ -718,6 +772,7 @@ def build_svg_document(
     docname="RosetteGenerator.svg",
     include_guides=False,
     guide_angle_offset_deg=0.0,
+    guide_opacity=0.7,
 ):
     if not path_data:
         raise ValueError("No curve data was generated")
@@ -757,7 +812,12 @@ def build_svg_document(
     ]
 
     if include_guides:
-        _append_polar_guides(svg_lines, bounds, angle_offset_deg=guide_angle_offset_deg)
+        _append_polar_guides(
+            svg_lines,
+            bounds,
+            angle_offset_deg=guide_angle_offset_deg,
+            guide_opacity=guide_opacity,
+        )
 
     svg_lines.append(
         "  <path d=\"{0}\" fill=\"none\" stroke=\"{1}\" stroke-width=\"{2:.6f}\" stroke-linecap=\"round\" stroke-linejoin=\"round\" id=\"path1\" />".format(
@@ -775,6 +835,7 @@ def build_svg_document_multi(
     docname="RosetteGenerator.svg",
     include_guides=False,
     guide_angle_offset_deg=0.0,
+    guide_opacity=0.7,
 ):
     if not path_entries:
         raise ValueError("No curve data was generated")
@@ -814,7 +875,12 @@ def build_svg_document_multi(
     ]
 
     if include_guides:
-        _append_polar_guides(svg_lines, bounds, angle_offset_deg=guide_angle_offset_deg)
+        _append_polar_guides(
+            svg_lines,
+            bounds,
+            angle_offset_deg=guide_angle_offset_deg,
+            guide_opacity=guide_opacity,
+        )
 
     path_id = 1
     for entry in path_entries:
@@ -850,6 +916,10 @@ class RosetteGeneratorPlugin(
             "x_count": 3,
             "flat_length": 8.0,
             "default_style": "Bump",
+            "default_holtz_style": "",
+            "default_holtz_n2": HOLTZ_DEFAULT_N2,
+            "default_holtz_a2": HOLTZ_DEFAULT_A2,
+            "show_guides": True,
             "auto_preview": True,
             "export_dir": default_export_dir,
         }
@@ -874,13 +944,23 @@ class RosetteGeneratorPlugin(
         payload = payload or {}
 
         kind = str(payload.get("kind", self._settings.get(["default_style"]))).strip()
+        holtz_style = str(payload.get("holtz_style", self._settings.get(["default_holtz_style"]) or "")).strip()
         if kind not in ROSETTE_TYPES:
             raise ValueError("Unknown rosette style")
+        if holtz_style and holtz_style not in HOLTZ_TYPES:
+            raise ValueError("Unknown Holtz style")
 
         radius = float(payload.get("radius", self._settings.get_float(["outer_radius"])))
         count = int(payload.get("count", self._settings.get_int(["num_segments"])))
         height = float(payload.get("height", self._settings.get_float(["amplitude"])))
         phase = float(payload.get("phase", self._settings.get_float(["phase"])))
+        holtz_n2 = int(payload.get("holtz_n2", self._settings.get_int(["default_holtz_n2"])))
+        holtz_a2 = float(payload.get("holtz_a2", self._settings.get_float(["default_holtz_a2"])))
+        stored_show_guides = self._settings.get(["show_guides"])
+        if stored_show_guides is None:
+            stored_show_guides = self._settings.get_float(["guide_opacity"]) > 0.0
+        show_guides = _as_bool(payload.get("show_guides", stored_show_guides))
+        guide_opacity = 0.7 if show_guides else 0.0
 
         extra = None
         if kind == "Concave+Convex":
@@ -893,6 +973,11 @@ class RosetteGeneratorPlugin(
 
         return {
             "kind": kind,
+            "holtz_style": holtz_style,
+            "holtz_n2": holtz_n2,
+            "holtz_a2": holtz_a2,
+            "show_guides": show_guides,
+            "guide_opacity": guide_opacity,
             "radius": radius,
             "count": count,
             "height": height,
@@ -916,18 +1001,30 @@ class RosetteGeneratorPlugin(
             docname=docname,
             include_guides=include_guides,
             guide_angle_offset_deg=guide_angle_offset_deg,
+            guide_opacity=params["guide_opacity"],
         )
         return svg, path_data, params, bounds
 
     def _build_path_and_bounds_from_params(self, params, mirror_horizontally=False):
-        segments, _ = get_rosette_geometry(
-            params["kind"],
-            params["radius"],
-            params["count"],
-            params["height"],
-            extra=params["extra"],
-            phase=params["phase"],
-        )
+        if params["holtz_style"]:
+            segments, _ = get_holtz_geometry(
+                params["holtz_style"],
+                params["radius"],
+                params["count"],
+                params["height"],
+                phase=params["phase"],
+                n2=params["holtz_n2"],
+                a2=params["holtz_a2"],
+            )
+        else:
+            segments, _ = get_rosette_geometry(
+                params["kind"],
+                params["radius"],
+                params["count"],
+                params["height"],
+                extra=params["extra"],
+                phase=params["phase"],
+            )
         if mirror_horizontally:
             segments = _mirror_segments_horizontally(segments)
         path_data, bounds = build_curve_path_data(segments)
@@ -960,14 +1057,25 @@ class RosetteGeneratorPlugin(
             raise RuntimeError("Merge requires the shapely package.")
 
         params = self._parse_rosette_payload(payload)
-        segments, _ = get_rosette_geometry(
-            params["kind"],
-            params["radius"],
-            params["count"],
-            params["height"],
-            extra=params["extra"],
-            phase=params["phase"],
-        )
+        if params["holtz_style"]:
+            segments, _ = get_holtz_geometry(
+                params["holtz_style"],
+                params["radius"],
+                params["count"],
+                params["height"],
+                phase=params["phase"],
+                n2=params["holtz_n2"],
+                a2=params["holtz_a2"],
+            )
+        else:
+            segments, _ = get_rosette_geometry(
+                params["kind"],
+                params["radius"],
+                params["count"],
+                params["height"],
+                extra=params["extra"],
+                phase=params["phase"],
+            )
 
         outline_points = self._segments_to_outline_points(segments)
         if len(outline_points) < 4:
@@ -1100,11 +1208,18 @@ class RosetteGeneratorPlugin(
     @octoprint.plugin.BlueprintPlugin.route("/settings", methods=["GET", "POST"])
     def settings_endpoint(self):
         if request.method == "GET":
+            stored_show_guides = self._settings.get(["show_guides"])
+            if stored_show_guides is None:
+                stored_show_guides = self._settings.get_float(["guide_opacity"]) > 0.0
             return jsonify(
                 {
                     "ok": True,
                     "settings": {
                         "default_style": self._settings.get(["default_style"]),
+                        "default_holtz_style": str(self._settings.get(["default_holtz_style"]) or ""),
+                        "default_holtz_n2": self._settings.get_int(["default_holtz_n2"]),
+                        "default_holtz_a2": self._settings.get_float(["default_holtz_a2"]),
+                        "show_guides": _as_bool(stored_show_guides),
                         "outer_radius": self._settings.get_float(["outer_radius"]),
                         "amplitude": self._settings.get_float(["amplitude"]),
                         "num_segments": self._settings.get_int(["num_segments"]),
@@ -1124,10 +1239,20 @@ class RosetteGeneratorPlugin(
 
         try:
             default_style = str(settings.get("default_style", self._settings.get(["default_style"]))).strip()
+            default_holtz_style = str(settings.get("default_holtz_style", self._settings.get(["default_holtz_style"]) or "")).strip()
+            default_holtz_n2 = int(settings.get("default_holtz_n2", self._settings.get_int(["default_holtz_n2"])))
+            default_holtz_a2 = float(settings.get("default_holtz_a2", self._settings.get_float(["default_holtz_a2"])))
+            show_guides = _as_bool(settings.get("show_guides", self._settings.get(["show_guides"])))
             if default_style not in ROSETTE_TYPES:
                 raise ValueError("Unknown default style")
+            if default_holtz_style and default_holtz_style not in HOLTZ_TYPES:
+                raise ValueError("Unknown default Holtz style")
 
             self._settings.set(["default_style"], default_style)
+            self._settings.set(["default_holtz_style"], default_holtz_style)
+            self._settings.set_int(["default_holtz_n2"], max(3, default_holtz_n2))
+            self._settings.set_float(["default_holtz_a2"], default_holtz_a2)
+            self._settings.set(["show_guides"], show_guides)
             self._settings.set_float(["outer_radius"], float(settings.get("outer_radius", self._settings.get_float(["outer_radius"]))))
             self._settings.set_float(["amplitude"], float(settings.get("amplitude", self._settings.get_float(["amplitude"]))))
             self._settings.set_int(["num_segments"], int(settings.get("num_segments", self._settings.get_int(["num_segments"]))))
@@ -1149,7 +1274,7 @@ class RosetteGeneratorPlugin(
         try:
             held_payload = payload.get("held")
 
-            svg, path_data, _params, current_bounds = self._build_svg_from_payload(
+            svg, path_data, params, current_bounds = self._build_svg_from_payload(
                 payload,
                 include_guides=True,
                 mirror_horizontally=True,
@@ -1182,6 +1307,7 @@ class RosetteGeneratorPlugin(
                     docname=docname,
                     include_guides=True,
                     guide_angle_offset_deg=180.0,
+                    guide_opacity=params["guide_opacity"],
                 )
 
             return jsonify({"ok": True, "svg": svg, "path": path_data})
