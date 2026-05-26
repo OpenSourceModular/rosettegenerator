@@ -16,6 +16,7 @@ $(function () {
         self.showGuides = ko.observable(true);
         self.splitPercent = ko.observable(50.0);
         self.xCount = ko.observable(3);
+        self.skipCount = ko.observable(2);
         self.flatLength = ko.observable(8.0);
         self.autoPreview = ko.observable(true);
         self.exportDir = ko.observable("");
@@ -33,6 +34,10 @@ $(function () {
 
         self.showX = ko.pureComputed(function () {
             return self.style() === "X + 1";
+        });
+
+        self.showSkip = ko.pureComputed(function () {
+            return self.style() === "Sine Skip";
         });
 
         self.showFlatLength = ko.pureComputed(function () {
@@ -132,6 +137,7 @@ $(function () {
                 phase: parseFloat(self.phase()),
                 split_percent: parseFloat(self.splitPercent()),
                 x_count: parseInt(self.xCount(), 10),
+                skip_count: parseInt(self.skipCount(), 10),
                 flat_length: parseFloat(self.flatLength())
             };
         };
@@ -246,6 +252,7 @@ $(function () {
                         phase: parseFloat(self.phase()),
                         split_percent: parseFloat(self.splitPercent()),
                         x_count: parseInt(self.xCount(), 10),
+                        skip_count: parseInt(self.skipCount(), 10),
                         flat_length: parseFloat(self.flatLength()),
                         auto_preview: !!self.autoPreview(),
                         export_dir: self.exportDir()
@@ -297,6 +304,7 @@ $(function () {
                     self.phase(settings.phase);
                     self.splitPercent(settings.split_percent);
                     self.xCount(settings.x_count);
+                    self.skipCount(settings.skip_count == null ? 2 : settings.skip_count);
                     self.flatLength(settings.flat_length);
                     self.autoPreview(!!settings.auto_preview);
                     self.exportDir(settings.export_dir || "");
@@ -345,6 +353,7 @@ $(function () {
                     phase: parseFloat(self.phase()),
                     split_percent: parseFloat(self.splitPercent()),
                     x_count: parseInt(self.xCount(), 10),
+                    skip_count: parseInt(self.skipCount(), 10),
                     flat_length: parseFloat(self.flatLength()),
                     export_dir: self.exportDir(),
                     filename: self.fileName()
@@ -407,6 +416,7 @@ $(function () {
         self.phase.subscribe(self.scheduleAutoPreview);
         self.splitPercent.subscribe(self.scheduleAutoPreview);
         self.xCount.subscribe(self.scheduleAutoPreview);
+        self.skipCount.subscribe(self.scheduleAutoPreview);
         self.flatLength.subscribe(self.scheduleAutoPreview);
         self.autoPreview.subscribe(self.scheduleAutoPreview);
 

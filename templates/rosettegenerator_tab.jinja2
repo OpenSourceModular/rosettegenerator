@@ -17,6 +17,7 @@
           <option value="Lotus">Lotus</option>
           <option value="A">A</option>
           <option value="Sine">Sine</option>
+          <option value="Sine Skip">Sine Skip</option>
           <option value="Bead">Bead</option>
         </select>
         <label class="rosettegenerator-inline-label" for="rosettegenerator-holtz-style">Holtz</label>
@@ -76,6 +77,10 @@
     <label data-bind="visible: showX">X Count</label>
     <span data-bind="visible: showX"></span>
     <input type="number" step="1" min="1" data-bind="value: xCount, visible: showX" />
+
+    <label data-bind="visible: showSkip">Skip</label>
+    <span data-bind="visible: showSkip"></span>
+    <input type="number" step="1" min="2" data-bind="value: skipCount, visible: showSkip" />
 
     <label data-bind="visible: showFlatLength">Flat Length</label>
     <span data-bind="visible: showFlatLength"></span>

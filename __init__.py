@@ -29,6 +29,7 @@ ROSETTE_TYPES = [
     "Lotus",
     "A",
     "Sine",
+    "Sine Skip",
     "Bead",
 ]
 
@@ -494,6 +495,44 @@ def generate_sine_segments(radius, count, amplitude, samples_per_period=120):
     return segments, radius - (amplitude / 2.0)
 
 
+def generate_sine_skip_segments(radius, count, amplitude, skip, samples_per_segment=120):
+    inner_radius = radius - amplitude
+    if amplitude <= 0:
+        raise ValueError("Amplitude must be greater than 0")
+    if inner_radius <= 0:
+        raise ValueError("Amplitude must be smaller than radius")
+    if skip < 2:
+        raise ValueError("Skip must be at least 2")
+
+    angle_step = TAU / float(count)
+    total_samples = max(samples_per_segment, 8)
+    segments = []
+
+    for segment_index in range(count):
+        segment_start = segment_index * angle_step
+        draw_segment = (segment_index % skip) != (skip - 1)
+
+        theta_values = _linspace(segment_start, segment_start + angle_step, total_samples + 1)
+
+        if draw_segment:
+            radial_values = [
+                inner_radius + (amplitude * (0.5 + (0.5 * math.sin((local * TAU) + (math.pi / 2.0)))))
+                for local in _linspace(0.0, 1.0, total_samples + 1)
+            ]
+        else:
+            radial_values = [radius] * (total_samples + 1)
+
+        points = [
+            (radial * math.cos(theta), radial * math.sin(theta))
+            for theta, radial in zip(theta_values, radial_values)
+        ]
+
+        for start_point, end_point in zip(points, points[1:]):
+            segments.append(("line", start_point, end_point))
+
+    return segments, inner_radius
+
+
 def generate_bead_segments(radius, count, amplitude, flat_length):
     if amplitude <= 0:
         raise ValueError("Amplitude must be greater than 0")
@@ -624,6 +663,10 @@ def get_rosette_geometry(kind, radius, count, height, extra=None, phase=0.0):
         segments, reference_radius = generate_a_segments(radius, count, height)
     elif kind == "Sine":
         segments, reference_radius = generate_sine_segments(radius, count, height)
+    elif kind == "Sine Skip":
+        if extra is None:
+            raise ValueError("Skip value is required for Sine Skip style")
+        segments, reference_radius = generate_sine_skip_segments(radius, count, height, int(extra))
     elif kind == "Bead":
         if extra is None:
             raise ValueError("Flat length is required for Bead style")
@@ -914,6 +957,7 @@ class RosetteGeneratorPlugin(
             "phase": 0.0,
             "split_percent": 50.0,
             "x_count": 3,
+            "skip_count": 2,
             "flat_length": 8.0,
             "default_style": "Bump",
             "default_holtz_style": "",
@@ -968,6 +1012,8 @@ class RosetteGeneratorPlugin(
             extra = split_percent / 100.0
         elif kind == "X + 1":
             extra = int(payload.get("x_count", self._settings.get_int(["x_count"])))
+        elif kind == "Sine Skip":
+            extra = max(2, int(payload.get("skip_count", self._settings.get_int(["skip_count"]) or 2)))
         elif kind == "Bead":
             extra = float(payload.get("flat_length", self._settings.get_float(["flat_length"])))
 
@@ -1226,6 +1272,7 @@ class RosetteGeneratorPlugin(
                         "phase": self._settings.get_float(["phase"]),
                         "split_percent": self._settings.get_float(["split_percent"]),
                         "x_count": self._settings.get_int(["x_count"]),
+                        "skip_count": max(2, self._settings.get_int(["skip_count"]) or 2),
                         "flat_length": self._settings.get_float(["flat_length"]),
                         "auto_preview": _as_bool(self._settings.get(["auto_preview"])),
                         "export_dir": str(self._settings.get(["export_dir"]) or ""),
@@ -1259,6 +1306,7 @@ class RosetteGeneratorPlugin(
             self._settings.set_float(["phase"], float(settings.get("phase", self._settings.get_float(["phase"]))))
             self._settings.set_float(["split_percent"], float(settings.get("split_percent", self._settings.get_float(["split_percent"]))))
             self._settings.set_int(["x_count"], int(settings.get("x_count", self._settings.get_int(["x_count"]))))
+            self._settings.set_int(["skip_count"], max(2, int(settings.get("skip_count", self._settings.get_int(["skip_count"]) or 2))))
             self._settings.set_float(["flat_length"], float(settings.get("flat_length", self._settings.get_float(["flat_length"]))))
             self._settings.set(["auto_preview"], _as_bool(settings.get("auto_preview", self._settings.get(["auto_preview"]))))
             self._settings.set(["export_dir"], str(settings.get("export_dir", self._settings.get(["export_dir"]) or "")).strip())
