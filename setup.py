@@ -30,7 +30,7 @@ setup(
     extras_require={
         "merge": ["shapely>=2.0"],
     },
-    python_requires=">=3.8,<4",
+    #python_requires=">=3.8,<4",
     entry_points={
         "octoprint.plugin": [
             "rosettegenerator = rosettegenerator",
