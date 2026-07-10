@@ -1,13 +1,13 @@
 [build-system]
 requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
-dependencies = ["shapely"]
 
 [project]
 name = "RosetteGenerator"
-version = "0.1.4"
+version = "0.1.5"
 
 description = "Rosette Generator plugin for Octoprint"
+dependencies = ["shapely>=2.0"]
 authors = [
     {name = "Justin Ahrens", email = "justin@ahrens.net"}
 ]

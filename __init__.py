@@ -950,6 +950,7 @@ class RosetteGeneratorPlugin(
 
     def get_settings_defaults(self):
         default_export_dir = os.path.join(self.get_plugin_data_folder(), "exports")
+        #default_export_dir = os.path.join(self._settings.getBaseFolder("uploads"), "rosette")
         return {
             "outer_radius": 50.0,
             "amplitude": 5.0,
