@@ -5,12 +5,9 @@ from setuptools import setup
 
 ROOT = Path(__file__).parent
 README = ROOT / "README.md"
-plugin_requires=[
-    "shapely>=2.0",
-]   
+
 
 setup(
-
     name="OctoPrint-RosetteGenerator",
     version="0.1.5",
     description="Generate decorative rosette curves and export SVG files from OctoPrint.",
@@ -22,7 +19,6 @@ setup(
     packages=["rosettegenerator"],
     package_dir={"rosettegenerator": "."},
     include_package_data=True,
-    install_requires=plugin_requires,
     package_data={
         "rosettegenerator": [
             "templates/*.jinja2",
@@ -30,7 +26,13 @@ setup(
             "static/js/*.js",
         ]
     },
-    
+    install_requires=[
+        "shapely>=2.0",
+    ],
+    extras_require={
+        "merge": ["shapely>=2.0"],
+    },
+    #python_requires=">=3.8,<4",
     entry_points={
         "octoprint.plugin": [
             "rosettegenerator = rosettegenerator",
