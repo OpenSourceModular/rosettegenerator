@@ -1450,7 +1450,7 @@ class RosetteGeneratorPlugin(
 
 
 __plugin_name__ = "RosetteGenerator"
-__plugin_version__ = "0.1.0"
+__plugin_version__ = "0.1.6"
 __plugin_description__ = "Generate decorative rosette curves and export SVG files from OctoPrint."
 __plugin_pythoncompat__ = ">=3.8,<4"
 
