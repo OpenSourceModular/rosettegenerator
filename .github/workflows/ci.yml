@@ -30,9 +30,9 @@ jobs:
           plugin = Path("__init__.py").read_text(encoding="utf-8")
 
           versions = {
-              "pyproject.toml": extract(r'^version\\s*=\\s*"([^"]+)"', pyproject, "pyproject.toml"),
-              "setup.py": extract(r'version\\s*=\\s*"([^"]+)"', setup, "setup.py"),
-              "__init__.py": extract(r'__plugin_version__\\s*=\\s*"([^"]+)"', plugin, "__init__.py"),
+              "pyproject.toml": extract(r'^version\s*=\s*"([^"]+)"', pyproject, "pyproject.toml"),
+              "setup.py": extract(r'version\s*=\s*"([^"]+)"', setup, "setup.py"),
+              "__init__.py": extract(r'__plugin_version__\s*=\s*"([^"]+)"', plugin, "__init__.py"),
           }
 
           unique_versions = sorted(set(versions.values()))
