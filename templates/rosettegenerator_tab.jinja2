@@ -1,8 +1,8 @@
 <div id="tab_plugin_rosettegenerator" class="rosettegenerator-tab-content">
-  <h3>Rosette Generator</h3>
+  
 
   <div class="rosettegenerator-grid">
-    <label>Style</label>
+    <label>Rosette Style</label>
     <div class="rosettegenerator-style-selects rosettegenerator-span-2">
       <div class="rosettegenerator-style-selects-row">
         <select data-bind="value: style">
@@ -47,20 +47,28 @@
     </div>
 
     <label>Outer Radius</label>
-    <input type="range" min="1" max="175" step="0.5" data-bind="value: radius, valueUpdate: 'input'" />
-    <input type="number" step="0.5" min="1" data-bind="value: radius, valueUpdate: 'input'" />
+    <input type="range" min="1" max="175" step="0.25" data-bind="value: radius, valueUpdate: 'input'" />
+    <input type="number" step="0.25" min="1" data-bind="value: radius, valueUpdate: 'input'" />
 
     <label>Amplitude</label>
-    <input type="range" min="0" max="50" step="0.5" data-bind="value: height, valueUpdate: 'input'" />
-    <input type="number" step="0.5" min="0" data-bind="value: height, valueUpdate: 'input'" />
+    <input type="range" min="0" max="50" step="0.25" data-bind="value: height, valueUpdate: 'input'" />
+    <input type="number" step="0.25" min="0" data-bind="value: height, valueUpdate: 'input'" />
 
     <label>Segments</label>
     <input type="range" min="1" max="96" step="1" data-bind="value: count, valueUpdate: 'input'" />
     <input type="number" step="1" min="1" data-bind="value: count, valueUpdate: 'input'" />
 
     <label>Phase (deg)</label>
-    <input type="range" min="0" max="180" step="0.5" data-bind="value: phase, valueUpdate: 'input'" />
-    <input type="number" step="0.5" min="0" max="180" data-bind="value: phase, valueUpdate: 'input'" />
+    <input type="range" min="0" max="180" step="0.25" data-bind="value: phase, valueUpdate: 'input'" />
+    <input type="number" step="0.25" min="0" max="180" data-bind="value: phase, valueUpdate: 'input'" />
+
+    <label>OD Fade</label>
+    <input type="range" min="0" step="0.25" data-bind="value: odFade, valueUpdate: 'input', attr: { max: radius }" />
+    <input type="number" step="0.25" min="0" data-bind="value: odFade, valueUpdate: 'input', attr: { max: radius }" />
+
+    <label>ID Fade</label>
+    <input type="range" min="0" step="0.25" data-bind="value: idFade, valueUpdate: 'input', attr: { max: radius }" />
+    <input type="number" step="0.25" min="0" data-bind="value: idFade, valueUpdate: 'input', attr: { max: radius }" />
 
     <label data-bind="visible: showHoltzN2">Holtz n2</label>
     <input type="range" min="3" max="24" step="1" data-bind="value: holtzN2, valueUpdate: 'input', visible: showHoltzN2" />
@@ -113,6 +121,10 @@
     <label class="rosettegenerator-checkbox">
       <input type="checkbox" data-bind="checked: showGuides" />
       Polar guides
+    </label>
+    <label class="rosettegenerator-checkbox">
+      <input type="checkbox" data-bind="checked: showFading" />
+      Show Fading
     </label>
     <span class="rosettegenerator-status" data-bind="text: status"></span>
   </div>

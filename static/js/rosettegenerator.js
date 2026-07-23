@@ -13,6 +13,9 @@ $(function () {
         self.height = ko.observable(5.0);
         self.count = ko.observable(12);
         self.phase = ko.observable(0.0);
+        self.odFade = ko.observable(50.0);
+        self.idFade = ko.observable(45.0);
+        self.showFading = ko.observable(true);
         self.showGuides = ko.observable(true);
         self.splitPercent = ko.observable(50.0);
         self.xCount = ko.observable(3);
@@ -23,6 +26,7 @@ $(function () {
         self.fileNameInput = ko.observable("");
 
         self.status = ko.observable("Ready");
+        self.rawSvgMarkup = ko.observable("");
         self.svgMarkup = ko.observable("");
         self.heldPayload = ko.observable(null);
         self.mergeAvailable = ko.observable(false);
@@ -79,6 +83,109 @@ $(function () {
             return self.hasHeld() && self.mergeAvailable();
         });
 
+        self.minimumFadeRadius = ko.pureComputed(function () {
+            var radius = parseFloat(self.radius());
+            var height = parseFloat(self.height());
+
+            if (isNaN(radius) || radius < 0) {
+                return 0;
+            }
+            if (isNaN(height) || height < 0) {
+                height = 0;
+            }
+
+            if (self.holtzStyle()) {
+                return Math.max(0, radius - height);
+            }
+
+            switch (self.style()) {
+                case "Bump":
+                case "Dip":
+                case "Arch":
+                case "Concave+Convex":
+                case "W":
+                case "X + 1":
+                case "Lotus":
+                case "A":
+                case "Sine":
+                case "Sine Skip":
+                case "Bead":
+                    return Math.max(0, radius - height);
+                case "Puffy":
+                case "Flat":
+                default:
+                    return Math.max(0, radius);
+            }
+        });
+
+        self.lastOdFadeDefault = parseFloat(self.radius()) || 0;
+        self.lastIdFadeDefault = self.minimumFadeRadius();
+
+        self.syncFadeDefaults = function () {
+            var nextOdFadeDefault = parseFloat(self.radius());
+            var nextIdFadeDefault = self.minimumFadeRadius();
+            var currentOdFade = parseFloat(self.odFade());
+            var currentIdFade = parseFloat(self.idFade());
+
+            if (isNaN(nextOdFadeDefault) || nextOdFadeDefault < 0) {
+                nextOdFadeDefault = 0;
+            }
+            if (isNaN(nextIdFadeDefault) || nextIdFadeDefault < 0) {
+                nextIdFadeDefault = 0;
+            }
+
+            if (isNaN(currentOdFade) || Math.abs(currentOdFade - self.lastOdFadeDefault) < 1e-9) {
+                self.odFade(nextOdFadeDefault);
+            }
+            if (isNaN(currentIdFade) || Math.abs(currentIdFade - self.lastIdFadeDefault) < 1e-9) {
+                self.idFade(nextIdFadeDefault);
+            }
+
+            self.lastOdFadeDefault = nextOdFadeDefault;
+            self.lastIdFadeDefault = nextIdFadeDefault;
+        };
+
+        self.renderFadeOverlay = function () {
+            var rawSvg = self.rawSvgMarkup() || "";
+            var overlayMarkup = "";
+            var odFade = parseFloat(self.odFade());
+            var idFade = parseFloat(self.idFade());
+            var radius = parseFloat(self.radius());
+
+            if (!rawSvg) {
+                self.svgMarkup("");
+                return;
+            }
+
+            if (!isNaN(radius) && radius >= 0) {
+                if (isNaN(odFade)) {
+                    odFade = radius;
+                }
+                if (isNaN(idFade)) {
+                    idFade = self.minimumFadeRadius();
+                }
+
+                odFade = Math.max(0, Math.min(radius, odFade));
+                idFade = Math.max(0, Math.min(radius, idFade));
+            }
+
+            if (self.showFading()) {
+                overlayMarkup = [
+                    '  <g id="fade-guides">',
+                    '    <circle cx="0" cy="0" r="' + odFade.toFixed(6) + '" fill="none" stroke="#0066ff" stroke-width="0.15" stroke-dasharray="0.75,0.75" />',
+                    '    <circle cx="0" cy="0" r="' + idFade.toFixed(6) + '" fill="none" stroke="#ffd400" stroke-width="0.15" stroke-dasharray="0.75,0.75" />',
+                    '  </g>'
+                ].join("\n");
+            }
+
+            if (overlayMarkup) {
+                self.svgMarkup(rawSvg.replace(/<\/svg>\s*$/i, overlayMarkup + "\n</svg>"));
+                return;
+            }
+
+            self.svgMarkup(rawSvg);
+        };
+
         self.activeStyleLabel = ko.pureComputed(function () {
             var holtzStyle = (self.holtzStyle() || "").toString().trim();
             if (holtzStyle) {
@@ -124,6 +231,22 @@ $(function () {
             }
         });
 
+        self.lastGeneratedFileName = self.defaultFileName();
+
+        self.regenerateGeneratedFileName = function () {
+            var currentName = (self.fileNameInput() || "").trim();
+            var previousGenerated = (self.lastGeneratedFileName || "").trim();
+            var nextGenerated = self.defaultFileName();
+            var displayedName = (self.fileName() || "").trim();
+            var isGeneratedName = !currentName || currentName === previousGenerated || displayedName === previousGenerated;
+
+            if (isGeneratedName) {
+                // Empty input means "use computed default filename".
+                self.fileNameInput("");
+            }
+            self.lastGeneratedFileName = nextGenerated;
+        };
+
         self.buildPayload = function () {
             return {
                 kind: self.style(),
@@ -135,6 +258,8 @@ $(function () {
                 height: parseFloat(self.height()),
                 count: parseInt(self.count(), 10),
                 phase: parseFloat(self.phase()),
+                od_fade: parseFloat(self.odFade()),
+                id_fade: parseFloat(self.idFade()),
                 split_percent: parseFloat(self.splitPercent()),
                 x_count: parseInt(self.xCount(), 10),
                 skip_count: parseInt(self.skipCount(), 10),
@@ -167,7 +292,8 @@ $(function () {
                         self.status((response && response.error) || "Preview failed");
                         return;
                     }
-                    self.svgMarkup(response.svg || "");
+                    self.rawSvgMarkup(response.svg || "");
+                    self.renderFadeOverlay();
                     self.status("Preview updated");
                 })
                 .fail(function (xhr) {
@@ -188,8 +314,12 @@ $(function () {
         self.resetHold = function () {
             self.heldPayload(null);
             self.mergedPayload(null);
+            self.rawSvgMarkup("");
             self.svgMarkup("");
-            self.status("Hold cleared and plot reset");
+            self.fileNameInput("");
+            self.lastGeneratedFileName = self.defaultFileName();
+            self.status("Resetting to defaults...");
+            self.loadSettings(true);
         };
 
         self.mergeHeld = function () {
@@ -221,7 +351,8 @@ $(function () {
                         held: self.heldPayload(),
                         current: self.buildPayload()
                     });
-                    self.svgMarkup(response.svg);
+                    self.rawSvgMarkup(response.svg || "");
+                    self.renderFadeOverlay();
                     self.status("Merge complete");
                 })
                 .fail(function (xhr) {
@@ -275,7 +406,7 @@ $(function () {
                 });
         };
 
-        self.loadSettings = function () {
+        self.loadSettings = function (forcePreview) {
             self.status("Loading defaults...");
             $.ajax({
                 url: OctoPrint.getBlueprintUrl("rosettegenerator") + "settings",
@@ -309,10 +440,11 @@ $(function () {
                     self.autoPreview(!!settings.auto_preview);
                     self.exportDir(settings.export_dir || "");
                     self.mergeAvailable(!!response.merge_available);
+                    self.syncFadeDefaults();
 
                     self.isInitializing = false;
 
-                    if (self.autoPreview()) {
+                    if (forcePreview || self.autoPreview()) {
                         self.preview();
                     } else {
                         self.status("Ready");
@@ -351,6 +483,8 @@ $(function () {
                     height: parseFloat(self.height()),
                     count: parseInt(self.count(), 10),
                     phase: parseFloat(self.phase()),
+                    od_fade: parseFloat(self.odFade()),
+                    id_fade: parseFloat(self.idFade()),
                     split_percent: parseFloat(self.splitPercent()),
                     x_count: parseInt(self.xCount(), 10),
                     skip_count: parseInt(self.skipCount(), 10),
@@ -404,16 +538,37 @@ $(function () {
                 self.holtzStyle("");
                 return;
             }
+            self.regenerateGeneratedFileName();
+            self.syncFadeDefaults();
             self.scheduleAutoPreview();
         });
-        self.holtzStyle.subscribe(self.scheduleAutoPreview);
+        self.holtzStyle.subscribe(function () {
+            self.regenerateGeneratedFileName();
+            self.syncFadeDefaults();
+            self.scheduleAutoPreview();
+        });
         self.holtzN2.subscribe(self.scheduleAutoPreview);
         self.holtzA2.subscribe(self.scheduleAutoPreview);
         self.showGuides.subscribe(self.scheduleAutoPreview);
-        self.radius.subscribe(self.scheduleAutoPreview);
-        self.height.subscribe(self.scheduleAutoPreview);
+        self.radius.subscribe(function () {
+            self.syncFadeDefaults();
+            self.scheduleAutoPreview();
+        });
+        self.height.subscribe(function () {
+            self.syncFadeDefaults();
+            self.scheduleAutoPreview();
+        });
         self.count.subscribe(self.scheduleAutoPreview);
         self.phase.subscribe(self.scheduleAutoPreview);
+        self.odFade.subscribe(function () {
+            self.renderFadeOverlay();
+            self.scheduleAutoPreview();
+        });
+        self.idFade.subscribe(function () {
+            self.renderFadeOverlay();
+            self.scheduleAutoPreview();
+        });
+        self.showFading.subscribe(self.renderFadeOverlay);
         self.splitPercent.subscribe(self.scheduleAutoPreview);
         self.xCount.subscribe(self.scheduleAutoPreview);
         self.skipCount.subscribe(self.scheduleAutoPreview);
