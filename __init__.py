@@ -986,16 +986,18 @@ class RosetteGeneratorPlugin(
             "css": ["css/rosettegenerator.css"],
         }
 
-    def get_update_information(self):
+    def get_update_information(self, *args, **kwargs):
         return {
-            "rosettegenerator": {
-                "displayName": "RosetteGenerator",
+            self._identifier: {
+                "displayName": self._plugin_name,
                 "displayVersion": self._plugin_version,
                 "type": "github_release",
                 "user": "OpenSourceModular",
                 "repo": "rosettegenerator",
                 "current": self._plugin_version,
-                "pip": "https://github.com/OpenSourceModular/rosettegenerator/releases/download/{target_version}/OctoPrint-RosetteGenerator.zip",
+                "method": "pip",
+                "pip": "https://github.com/OpenSourceModular/rosettegenerator/releases/download/{target}/OctoPrint-RosetteGenerator.zip",
+                "release_compare": "python",
             }
         }
 
@@ -1464,9 +1466,15 @@ class RosetteGeneratorPlugin(
 
 
 __plugin_name__ = "RosetteGenerator"
-__plugin_version__ = "0.1.7"
+__plugin_version__ = "0.1.8"
 __plugin_description__ = "Generate decorative rosette curves and export SVG files from OctoPrint."
 __plugin_pythoncompat__ = ">=3.8,<4"
+
+
+def get_update_information(*args, **kwargs):
+    if __plugin_implementation__ is None:
+        return {}
+    return __plugin_implementation__.get_update_information(*args, **kwargs)
 
 
 def __plugin_load__():
@@ -1474,5 +1482,5 @@ def __plugin_load__():
     global __plugin_hooks__
     __plugin_implementation__ = RosetteGeneratorPlugin()
     __plugin_hooks__ = {
-        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+        "octoprint.plugin.softwareupdate.check_config": get_update_information,
     }
