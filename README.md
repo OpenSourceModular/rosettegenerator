@@ -23,6 +23,7 @@ Generate Rose Enging Rosette patterns directly in OctoPrint, preview them in the
 ## Release Checklist
 
 - Keep `version` synchronized in `pyproject.toml`, `setup.py`, and `__plugin_version__` in `__init__.py`.
+- Run `python scripts/check_versions.py` before creating a tag.
 - Create a Git tag that exactly matches the version, prefixed with `v` (example: `v0.1.9`).
 - Ensure the GitHub release title and tag refer to the same version number.
 - Upload `OctoPrint-RosetteGenerator.zip` from the matching tagged commit.
