@@ -13,6 +13,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate version consistency
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          def extract(pattern, text, source):
+              match = re.search(pattern, text, re.MULTILINE)
+              if not match:
+                  raise SystemExit(f"Could not find version in {source}")
+              return match.group(1)
+
+          pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+          setup = Path("setup.py").read_text(encoding="utf-8")
+          plugin = Path("__init__.py").read_text(encoding="utf-8")
+
+          versions = {
+              "pyproject.toml": extract(r'^version\\s*=\\s*"([^"]+)"', pyproject, "pyproject.toml"),
+              "setup.py": extract(r'version\\s*=\\s*"([^"]+)"', setup, "setup.py"),
+              "__init__.py": extract(r'__plugin_version__\\s*=\\s*"([^"]+)"', plugin, "__init__.py"),
+          }
+
+          unique_versions = sorted(set(versions.values()))
+          if len(unique_versions) != 1:
+              details = "\n".join(f"  - {k}: {v}" for k, v in versions.items())
+              raise SystemExit(f"Version mismatch detected:\n{details}")
+
+          print(f"Version check passed: {unique_versions[0]}")
+          PY
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
