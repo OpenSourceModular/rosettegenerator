@@ -12,7 +12,7 @@ plugin_requires=[
 setup(
 
     name="RosetteGenerator",
-    version="0.1.9",
+    version="0.1.10",
     description="Generate Rosettes and export SVG files from OctoPrint.",
     long_description=README.read_text(encoding="utf-8") if README.exists() else "",
     long_description_content_type="text/markdown",

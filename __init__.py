@@ -2,7 +2,7 @@ import math
 import os
 
 from flask import jsonify, request
-
+import octoprint.settings
 import octoprint.plugin
 
 from .holtz_patterns import HOLTZ_FUNCTIONS
@@ -764,6 +764,66 @@ def build_curve_path_data(segments):
     return " ".join(path_parts), (min(all_x), min(all_y), max(all_x), max(all_y))
 
 
+def _sample_segment_points(segment, arc_samples=120):
+    if segment[0] == "arc":
+        _, p0, p1, p2 = segment
+        x_vals, y_vals = arc_through_three_points(p0, p1, p2, samples=arc_samples)
+        return list(zip(x_vals, y_vals))
+
+    _, p0, p1 = segment
+    return [p0, p1]
+
+
+def _clamp_point_radius(point, inner_radius, outer_radius):
+    px, py = point
+    radius = math.hypot(px, py)
+    if radius <= 1e-12:
+        return point
+
+    clamped_radius = min(max(radius, inner_radius), outer_radius)
+    if abs(clamped_radius - radius) <= 1e-12:
+        return point
+
+    scale = clamped_radius / radius
+    return (px * scale, py * scale)
+
+
+def _apply_fade_clamp_to_segments(segments, inner_radius=None, outer_radius=None):
+    if inner_radius is None and outer_radius is None:
+        return segments
+
+    if outer_radius is None:
+        outer_radius = float("inf")
+    else:
+        outer_radius = max(0.0, float(outer_radius))
+
+    if inner_radius is None:
+        inner_radius = 0.0
+    else:
+        inner_radius = max(0.0, float(inner_radius))
+
+    inner_radius = min(inner_radius, outer_radius)
+
+    clamped_segments = []
+    previous_point = None
+
+    for segment in segments:
+        points = _sample_segment_points(segment, arc_samples=120)
+        if not points:
+            continue
+
+        clamped_points = [_clamp_point_radius(point, inner_radius, outer_radius) for point in points]
+        if previous_point is not None and clamped_points:
+            clamped_points[0] = previous_point
+
+        for start_point, end_point in zip(clamped_points, clamped_points[1:]):
+            clamped_segments.append(("line", start_point, end_point))
+
+        previous_point = clamped_points[-1]
+
+    return clamped_segments
+
+
 def _append_polar_guides(svg_lines, bounds, angle_offset_deg=0.0, guide_opacity=0.7):
     min_x, min_y, max_x, max_y = bounds
     guide_opacity = max(0.0, min(1.0, float(guide_opacity)))
@@ -959,7 +1019,9 @@ class RosetteGeneratorPlugin(
             self._logger.exception("Failed to build Software Update hook payload")
 
     def get_settings_defaults(self):
-        default_export_dir = os.path.join(self.get_plugin_data_folder(), "exports")
+        #default_export_dir = octoprint.settings.settings().get(["folder", "uploads"])
+        default_export_dir = os.path.join(octoprint.settings.settings().getBaseFolder("base"),"uploads\\rosette")
+        #default_export_dir = os.path.join(self.get_plugin_data_folder(), "exports")
         #default_export_dir = os.path.join(self._settings.getBaseFolder("uploads"), "rosette")
         return {
             "outer_radius": 50.0,
@@ -1043,6 +1105,18 @@ class RosetteGeneratorPlugin(
         elif kind == "Bead":
             extra = float(payload.get("flat_length", self._settings.get_float(["flat_length"])))
 
+        od_fade = payload.get("od_fade")
+        if od_fade in (None, ""):
+            od_fade = None
+        else:
+            od_fade = float(od_fade)
+
+        id_fade = payload.get("id_fade")
+        if id_fade in (None, ""):
+            id_fade = None
+        else:
+            id_fade = float(id_fade)
+
         return {
             "kind": kind,
             "holtz_style": holtz_style,
@@ -1055,6 +1129,8 @@ class RosetteGeneratorPlugin(
             "height": height,
             "phase": phase,
             "extra": extra,
+            "od_fade": od_fade,
+            "id_fade": id_fade,
         }
 
     def _build_svg_from_payload(self, payload, include_guides=False, mirror_horizontally=False, guide_angle_offset_deg=0.0):
@@ -1097,6 +1173,11 @@ class RosetteGeneratorPlugin(
                 extra=params["extra"],
                 phase=params["phase"],
             )
+        segments = _apply_fade_clamp_to_segments(
+            segments,
+            inner_radius=params["id_fade"],
+            outer_radius=params["od_fade"],
+        )
         if mirror_horizontally:
             segments = _mirror_segments_horizontally(segments)
         path_data, bounds = build_curve_path_data(segments)
@@ -1148,6 +1229,12 @@ class RosetteGeneratorPlugin(
                 extra=params["extra"],
                 phase=params["phase"],
             )
+
+        segments = _apply_fade_clamp_to_segments(
+            segments,
+            inner_radius=params["id_fade"],
+            outer_radius=params["od_fade"],
+        )
 
         outline_points = self._segments_to_outline_points(segments)
         if len(outline_points) < 4:
@@ -1475,7 +1562,7 @@ class RosetteGeneratorPlugin(
 
 
 __plugin_name__ = "RosetteGenerator"
-__plugin_version__ = "0.1.9"
+__plugin_version__ = "0.1.10"
 __plugin_description__ = "Generate decorative rosette curves and export SVG files from OctoPrint."
 __plugin_pythoncompat__ = ">=3.8,<4"
 
