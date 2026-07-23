@@ -17,7 +17,7 @@ Generate Rose Enging Rosette patterns directly in OctoPrint, preview them in the
 
 1. In OctoPrint, open **Settings > Plugin Manager > Get More...**
 2. Use **...from URL** and paste this in:
-     https://github.com/OpenSourceModular/rosettegenerator/releases/download/v0.1.9/OctoPrint-RosetteGenerator.zip
+     https://github.com/OpenSourceModular/rosettegenerator/releases/download/v0.1.11/OctoPrint-RosetteGenerator.zip
 3. Install and restart OctoPrint.
 
 ## Release Checklist
