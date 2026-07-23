@@ -948,6 +948,16 @@ class RosetteGeneratorPlugin(
 ):
     def on_after_startup(self):
         self._logger.info("RosetteGenerator plugin loaded")
+        try:
+            update_info = self.get_update_information()
+            self._logger.info(
+                "Software Update hook ready: identifier=%s, keys=%s, payload=%s",
+                self._identifier,
+                list(update_info.keys()),
+                update_info,
+            )
+        except Exception:
+            self._logger.exception("Failed to build Software Update hook payload")
 
     def get_settings_defaults(self):
         default_export_dir = os.path.join(self.get_plugin_data_folder(), "exports")
