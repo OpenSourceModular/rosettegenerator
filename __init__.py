@@ -1020,7 +1020,7 @@ class RosetteGeneratorPlugin(
 
     def get_settings_defaults(self):
         #default_export_dir = octoprint.settings.settings().get(["folder", "uploads"])
-        default_export_dir = os.path.join(octoprint.settings.settings().getBaseFolder("base"),"uploads\\rosette")
+        default_export_dir = os.path.join(octoprint.settings.settings().getBaseFolder("base"),"uploads/rosette")
         #default_export_dir = os.path.join(self.get_plugin_data_folder(), "exports")
         #default_export_dir = os.path.join(self._settings.getBaseFolder("uploads"), "rosette")
         return {
