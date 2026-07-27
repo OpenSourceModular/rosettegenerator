@@ -24,6 +24,8 @@ $(function () {
         self.autoPreview = ko.observable(true);
         self.exportDir = ko.observable("");
         self.fileNameInput = ko.observable("");
+        self.samplesDialogOpen = ko.observable(false);
+        self.samplesTab = ko.observable("regular");
 
         self.status = ko.observable("Ready");
         self.rawSvgMarkup = ko.observable("");
@@ -31,6 +33,48 @@ $(function () {
         self.heldPayload = ko.observable(null);
         self.mergeAvailable = ko.observable(false);
         self.mergedPayload = ko.observable(null);
+        self.samplesError = ko.observable("");
+        self.samplesLoading = ko.observable(false);
+        self.samplesReady = ko.observable(false);
+        self.samplePreviewSettings = null;
+
+        self.regularSampleItems = ko.observableArray([
+            { name: "Bump", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Dip", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Arch", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Concave+Convex", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Puffy", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "W", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "X + 1", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Flat", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Lotus", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "A", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Sine", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Sine Skip", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Bead", svg: ko.observable(""), loading: ko.observable(false) }
+        ]);
+
+        self.holtzSampleItems = ko.observableArray([
+            { name: "Holtz - A", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - B", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - C", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - D", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - E", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - F", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - G", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - H", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - I", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - J", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - K", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - L", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - M", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - N", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - O", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - P", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - Q", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - R", svg: ko.observable(""), loading: ko.observable(false) },
+            { name: "Holtz - S", svg: ko.observable(""), loading: ko.observable(false) }
+        ]);
 
         self.showSplit = ko.pureComputed(function () {
             return self.style() === "Concave+Convex";
@@ -245,6 +289,166 @@ $(function () {
                 self.fileNameInput("");
             }
             self.lastGeneratedFileName = nextGenerated;
+        };
+
+        self.openSamplesDialog = function () {
+            self.samplesDialogOpen(true);
+            self.samplesError("");
+            self.samplesReady(false);
+            self.loadSampleIcons();
+        };
+
+        self.closeSamplesDialog = function () {
+            self.samplesDialogOpen(false);
+        };
+
+        self.switchSamplesTab = function (tabName) {
+            self.samplesTab(tabName === "holtz" ? "holtz" : "regular");
+        };
+
+        self.isRegularSamplesTab = ko.pureComputed(function () {
+            return self.samplesTab() === "regular";
+        });
+
+        self.isHoltzSamplesTab = ko.pureComputed(function () {
+            return self.samplesTab() === "holtz";
+        });
+
+        self.defaultSampleRequestPayload = function () {
+            return {
+                kind: "Bump",
+                holtz_style: "",
+                holtz_n2: 5,
+                holtz_a2: 0.2,
+                show_guides: false,
+                radius: 28.0,
+                height: 5.0,
+                count: 12,
+                phase: 0.0,
+                od_fade: 28.0,
+                id_fade: 23.0,
+                split_percent: 50.0,
+                x_count: 3,
+                skip_count: 2,
+                flat_length: 8.0
+            };
+        };
+
+        self.fetchSamplePreviewSettings = function () {
+            var deferred = $.Deferred();
+
+            $.ajax({
+                url: OctoPrint.getBlueprintUrl("rosettegenerator") + "sample_preview_settings?ts=" + Date.now(),
+                method: "GET"
+            })
+                .done(function (response) {
+                    if (!response || !response.ok || !response.settings) {
+                        self.samplesError((response && response.error) || "Unable to load sample preview settings file.");
+                        deferred.reject();
+                        return;
+                    }
+                    self.samplePreviewSettings = response.settings;
+                    deferred.resolve();
+                })
+                .fail(function (xhr) {
+                    var msg = "Unable to load sample preview settings file.";
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+                        msg = xhr.responseJSON.error;
+                    }
+                    self.samplesError(msg);
+                    deferred.reject();
+                });
+
+            return deferred.promise();
+        };
+
+        self.resetSampleIcons = function () {
+            $.each(self.regularSampleItems(), function (_index, item) {
+                item.svg("");
+                item.loading(false);
+            });
+            $.each(self.holtzSampleItems(), function (_index, item) {
+                item.svg("");
+                item.loading(false);
+            });
+        };
+
+        self.sampleRequestPayload = function (groupName, itemName) {
+            var defaults = self.defaultSampleRequestPayload();
+            var configured = {};
+            var groups = self.samplePreviewSettings || {};
+
+            if (groups[groupName] && groups[groupName][itemName]) {
+                configured = groups[groupName][itemName];
+            }
+
+            var payload = $.extend({}, defaults, configured);
+
+            if (!payload.kind) {
+                payload.kind = groupName === "regular" ? itemName : "Bump";
+            }
+            if (!payload.holtz_style) {
+                payload.holtz_style = groupName === "holtzappfel" ? itemName : "";
+            }
+
+            return payload;
+        };
+
+        self.populateSampleSet = function (sampleItems, groupName) {
+            var sequence = $.Deferred().resolve();
+
+            $.each(sampleItems, function (_index, item) {
+                sequence = sequence.then(function () {
+                    item.loading(true);
+                    return $.ajax({
+                        url: OctoPrint.getBlueprintUrl("rosettegenerator") + "preview",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(self.sampleRequestPayload(groupName, item.name))
+                    })
+                        .done(function (response) {
+                            if (!response || !response.ok || !response.svg) {
+                                return;
+                            }
+                            item.svg(response.svg);
+                        })
+                        .always(function () {
+                            item.loading(false);
+                        });
+                });
+            });
+
+            return sequence.promise();
+        };
+
+        self.loadSampleIcons = function () {
+            if (self.samplesLoading()) {
+                return;
+            }
+
+            self.samplesLoading(true);
+            self.samplesReady(false);
+            self.samplesError("");
+            self.resetSampleIcons();
+
+            self.fetchSamplePreviewSettings()
+                .then(function () {
+                    return $.when(
+                        self.populateSampleSet(self.regularSampleItems(), "regular"),
+                        self.populateSampleSet(self.holtzSampleItems(), "holtzappfel")
+                    );
+                })
+                .fail(function () {
+                    if (!self.samplesError()) {
+                        self.samplesError("Unable to load one or more sample previews.");
+                    }
+                })
+                .always(function () {
+                    if (!self.samplesError()) {
+                        self.samplesReady(true);
+                    }
+                    self.samplesLoading(false);
+                });
         };
 
         self.buildPayload = function () {

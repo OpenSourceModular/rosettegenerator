@@ -25,6 +25,7 @@ setup(
     install_requires=plugin_requires,
     package_data={
         "rosettegenerator": [
+            "sample_preview_settings.json",
             "templates/*.jinja2",
             "static/css/*.css",
             "static/js/*.js",

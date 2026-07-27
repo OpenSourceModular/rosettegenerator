@@ -114,6 +114,7 @@
     <button class="btn" data-bind="click: resetHold">Reset</button>
     <button class="btn" data-bind="click: mergeHeld, enable: canMerge">Merge</button>
     <button class="btn" data-bind="click: saveDefaults">Save Defaults</button>
+    <button class="btn" data-bind="click: openSamplesDialog">Examples</button>
     <label class="rosettegenerator-checkbox">
       <input type="checkbox" data-bind="checked: autoPreview" />
       Auto preview
@@ -134,4 +135,56 @@
   </div>
 
   <div class="rosettegenerator-preview" data-bind="html: svgMarkup"></div>
+
+  <div class="rosettegenerator-samples-overlay" data-bind="visible: samplesDialogOpen">
+    <div class="rosettegenerator-samples-frame" role="dialog" aria-modal="true" aria-label="Rosette samples">
+      <div class="rosettegenerator-samples-header">
+        <h3>Examples</h3>
+        <button class="btn" data-bind="click: closeSamplesDialog">Close</button>
+      </div>
+
+      <div class="rosettegenerator-samples-tabs" role="tablist" aria-label="Sample groups">
+        <button
+          class="btn rosettegenerator-samples-tab"
+          role="tab"
+          data-bind="click: function () { switchSamplesTab('regular'); }, css: { active: isRegularSamplesTab() }, attr: { 'aria-selected': isRegularSamplesTab() }"
+        >
+          Regular
+        </button>
+        <button
+          class="btn rosettegenerator-samples-tab"
+          role="tab"
+          data-bind="click: function () { switchSamplesTab('holtz'); }, css: { active: isHoltzSamplesTab() }, attr: { 'aria-selected': isHoltzSamplesTab() }"
+        >
+          Holtzappfel
+        </button>
+      </div>
+
+      <div class="rosettegenerator-samples-error" data-bind="visible: samplesError, text: samplesError"></div>
+
+      <div class="rosettegenerator-samples-loading-state" data-bind="visible: samplesLoading() && !samplesReady()">
+        Loading previews...
+      </div>
+
+      <div class="rosettegenerator-samples-grid" data-bind="visible: samplesReady() && isRegularSamplesTab()">
+        <!-- ko foreach: regularSampleItems -->
+        <div class="rosettegenerator-sample-card">
+          <div class="rosettegenerator-sample-name" data-bind="text: name"></div>
+          <div class="rosettegenerator-sample-icon" data-bind="html: svg"></div>
+          <div class="rosettegenerator-sample-loading" data-bind="visible: loading">Loading...</div>
+        </div>
+        <!-- /ko -->
+      </div>
+
+      <div class="rosettegenerator-samples-grid" data-bind="visible: samplesReady() && isHoltzSamplesTab()">
+        <!-- ko foreach: holtzSampleItems -->
+        <div class="rosettegenerator-sample-card">
+          <div class="rosettegenerator-sample-name" data-bind="text: name"></div>
+          <div class="rosettegenerator-sample-icon" data-bind="html: svg"></div>
+          <div class="rosettegenerator-sample-loading" data-bind="visible: loading">Loading...</div>
+        </div>
+        <!-- /ko -->
+      </div>
+    </div>
+  </div>
 </div>
