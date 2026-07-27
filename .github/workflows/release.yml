@@ -4,6 +4,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to package and upload, for example v0.1.12
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -11,10 +16,15 @@ permissions:
 jobs:
   build-and-attach-zip:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
 
       - name: Validate version consistency
         run: |
@@ -47,9 +57,6 @@ jobs:
           PY
 
       - name: Validate release tag matches version
-        if: github.event_name == 'release'
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           python - <<'PY'
           import re
@@ -75,12 +82,13 @@ jobs:
 
       - name: Create plugin zip
         run: |
-          git archive --format=zip --output OctoPrint-RosetteGenerator.zip HEAD
+          git archive --format=zip --output OctoPrint-RosetteGenerator.zip "$RELEASE_TAG"
 
       - name: Upload asset to release
-        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          overwrite_files: true
           files: OctoPrint-RosetteGenerator.zip
 
       - name: Upload artifact for manual runs
