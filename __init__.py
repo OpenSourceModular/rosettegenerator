@@ -1006,6 +1006,9 @@ class RosetteGeneratorPlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.BlueprintPlugin,
 ):
+    def is_blueprint_csrf_protected(self):
+        return True
+
     def on_after_startup(self):
         self._logger.info("RosetteGenerator plugin loaded")
         try:
