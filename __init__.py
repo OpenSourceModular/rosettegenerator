@@ -1019,10 +1019,9 @@ class RosetteGeneratorPlugin(
             self._logger.exception("Failed to build Software Update hook payload")
 
     def get_settings_defaults(self):
-        #default_export_dir = octoprint.settings.settings().get(["folder", "uploads"])
-        default_export_dir = os.path.join(octoprint.settings.settings().getBaseFolder("base"),"uploads/rosette")
-        #default_export_dir = os.path.join(self.get_plugin_data_folder(), "exports")
-        #default_export_dir = os.path.join(self._settings.getBaseFolder("uploads"), "rosette")
+        default_export_dir = os.path.normpath(
+            os.path.join(octoprint.settings.settings().getBaseFolder("uploads"), "rosette")
+        )
         return {
             "outer_radius": 50.0,
             "amplitude": 5.0,
@@ -1562,7 +1561,7 @@ class RosetteGeneratorPlugin(
 
 
 __plugin_name__ = "RosetteGenerator"
-__plugin_version__ = "0.1.12"
+__plugin_version__ = "0.1.13"
 __plugin_description__ = "Generate decorative rosette curves and export SVG files from OctoPrint."
 __plugin_pythoncompat__ = ">=3.8,<4"
 
