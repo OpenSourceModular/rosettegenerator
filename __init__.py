@@ -1,5 +1,6 @@
 import math
 import os
+import json
 
 from flask import jsonify, request
 import octoprint.settings
@@ -1005,6 +1006,9 @@ class RosetteGeneratorPlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.BlueprintPlugin,
 ):
+    def is_blueprint_csrf_protected(self):
+        return True
+
     def on_after_startup(self):
         self._logger.info("RosetteGenerator plugin loaded")
         try:
@@ -1362,6 +1366,24 @@ class RosetteGeneratorPlugin(
         svg = "\n".join(svg_lines)
 
         return svg, d_value
+
+    def _sample_preview_settings_path(self):
+        return os.path.join(os.path.dirname(__file__), "sample_preview_settings.json")
+
+    def _load_sample_preview_settings(self):
+        path = self._sample_preview_settings_path()
+        with open(path, "r", encoding="utf-8") as settings_file:
+            settings_data = json.load(settings_file)
+        if not isinstance(settings_data, dict):
+            raise ValueError("Sample preview settings file must contain a JSON object.")
+        return settings_data
+
+    @octoprint.plugin.BlueprintPlugin.route("/sample_preview_settings", methods=["GET"])
+    def sample_preview_settings_endpoint(self):
+        try:
+            return jsonify({"ok": True, "settings": self._load_sample_preview_settings()})
+        except Exception as exc:
+            return jsonify({"ok": False, "error": "Could not load sample preview settings: {0}".format(exc)}), 500
 
     @octoprint.plugin.BlueprintPlugin.route("/settings", methods=["GET", "POST"])
     def settings_endpoint(self):

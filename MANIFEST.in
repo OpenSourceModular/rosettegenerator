@@ -1,5 +1,6 @@
 include README.md
 include LICENSE
+include sample_preview_settings.json
 recursive-include static *
 recursive-include templates *
 exclude exports/*.svg
