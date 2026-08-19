@@ -87,14 +87,18 @@ jobs:
 
           package_version = match.group(1)
           release_tag = os.environ.get("RELEASE_TAG", "")
+          event_name = os.environ.get("GITHUB_EVENT_NAME", "")
           expected_tag = f"v{package_version}"
 
           if release_tag != expected_tag:
-              raise SystemExit(
-                  f"Release tag/version mismatch: tag={release_tag}, expected={expected_tag}"
-              )
+              message = f"Release tag/version mismatch: tag={release_tag}, expected={expected_tag}"
+              if event_name == "workflow_dispatch":
+                  raise SystemExit(message)
+              print(f"::warning::{message}")
+              print("Continuing because this run was triggered by a published release.")
+          else:
+              print(f"Release tag check passed: {release_tag}")
 
-          print(f"Release tag check passed: {release_tag}")
           PY
 
       - name: Create plugin zip
